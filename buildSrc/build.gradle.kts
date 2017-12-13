@@ -20,6 +20,7 @@ import java.util.Properties
 plugins {
     groovy
     `java-gradle-plugin`
+    `kotlin-dsl`
     idea
     eclipse
 }
