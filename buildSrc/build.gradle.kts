@@ -36,6 +36,10 @@ gradlePlugin {
             id = "classycle"
             implementationClass = "org.gradle.plugins.classycle.ClassyclePlugin"
         }
+        "testFixtures" {
+            id = "test-fixtures"
+            implementationClass = "org.gradle.plugins.testfixtures.TestFixturesPlugin"
+        }
         "jsoup" {
             id = "jsoup"
             implementationClass = "org.gradle.plugins.jsoup.JsoupPlugin"
