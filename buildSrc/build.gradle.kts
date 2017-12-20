@@ -40,6 +40,10 @@ gradlePlugin {
             id = "test-fixtures"
             implementationClass = "org.gradle.plugins.testfixtures.TestFixturesPlugin"
         }
+        "strictCompile" {
+            id = "strict-compile"
+            implementationClass = "org.gradle.plugins.strictcompile.StrictCompilePlugin"
+        }
         "jsoup" {
             id = "jsoup"
             implementationClass = "org.gradle.plugins.jsoup.JsoupPlugin"

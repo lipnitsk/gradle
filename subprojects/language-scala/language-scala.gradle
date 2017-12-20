@@ -1,3 +1,7 @@
+plugins {
+    id 'strict-compile'
+}
+
 // Compiler daemon
 sourceCompatibility = 1.6
 
@@ -16,5 +20,3 @@ testFixtures {
     from(':platformBase')
     from(':launcher')
 }
-
-strictCompile()
