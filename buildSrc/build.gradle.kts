@@ -15,6 +15,7 @@
  */
 
 import org.gradle.api.internal.PropertiesUtils
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Properties
 
 plugins {
@@ -87,6 +88,18 @@ dependencies {
     compile("me.champeau.gradle:japicmp-gradle-plugin:0.2.4")
     compile("org.asciidoctor:asciidoctor-gradle-plugin:1.5.6")
     compile("com.github.javaparser:javaparser-core:2.4.0")
+}
+
+// Allow Kotlin types to reference both Java and Groovy types
+// Remove compileGroovy -> compileJava dependency added by GroovyBasePlugin
+// Prevent cycles in the task graph as compileJava depends on compileKotlin
+tasks {
+    val compileGroovy by getting(GroovyCompile::class) {
+        dependsOn.remove("compileJava")
+    }
+    "compileKotlin"(KotlinCompile::class) {
+        classpath += files(compileGroovy.destinationDir).builtBy(compileGroovy)
+    }
 }
 
 val isCiServer: Boolean by extra { System.getenv().containsKey("CI") }
