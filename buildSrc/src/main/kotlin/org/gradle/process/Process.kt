@@ -19,7 +19,6 @@
 
 package org.gradle.process
 
-import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.testing.LeakingProcessKillPattern
@@ -56,7 +55,7 @@ Output: $killOutput
 data class ProcessInfo(val pid: String, val process: String)
 
 
-fun Project.forEachLeakingJavaProcess(action: Action<ProcessInfo>) {
+fun Project.forEachLeakingJavaProcess(action: ProcessInfo.() -> Unit) {
     val output = ByteArrayOutputStream()
     val error = ByteArrayOutputStream()
     val (result, pidPattern) =
@@ -97,7 +96,7 @@ fun Project.forEachLeakingJavaProcess(action: Action<ProcessInfo>) {
                 val pid = pidMatcher.groupValues[1]
                 val process = processMatcher.groupValues[1]
                 if (!isMe(process)) {
-                    action.execute(ProcessInfo(pid, process))
+                    action(ProcessInfo(pid, process))
                 }
             }
         }
