@@ -16,6 +16,9 @@
 
 package org.gradle.api.internal.tasks.compile.incremental;
 
+import org.apache.tools.zip.ZipEntry;
+import org.apache.tools.zip.ZipFile;
+import org.gradle.api.UncheckedIOException;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.internal.tasks.compile.CleaningJavaCompiler;
 import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
@@ -28,6 +31,9 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.language.base.internal.compile.Compiler;
+
+import java.io.File;
+import java.io.IOException;
 
 public class IncrementalCompilerDecorator {
 
@@ -71,8 +77,8 @@ public class IncrementalCompilerDecorator {
             LOG.info("{} - is not incremental. Unable to infer the source directories.", displayName);
             return cleaningCompiler;
         }
-        if (!annotationProcessorPath.isEmpty()) {
-            LOG.info("{} - is not incremental. Annotation processors are present.", displayName);
+        if (hasNonIncrementalProcessors()) {
+            LOG.info("{} - is not incremental. Non-incremental annotation processors are present.", displayName);
             return cleaningCompiler;
         }
         ClassSetAnalysisData data = compileCaches.getLocalClassSetAnalysisStore().get();
@@ -82,5 +88,37 @@ public class IncrementalCompilerDecorator {
         }
         PreviousCompilation previousCompilation = new PreviousCompilation(new ClassSetAnalysis(data), compileCaches.getLocalJarClasspathSnapshotStore(), compileCaches.getJarSnapshotCache());
         return new SelectiveCompiler(inputs, previousCompilation, cleaningCompiler, staleClassDetecter, compilationInitializer, jarClasspathSnapshotMaker);
+    }
+
+    private boolean hasNonIncrementalProcessors() {
+        for (File file : annotationProcessorPath) {
+            if (file.isDirectory()) {
+                File processorDeclaration = new File(file, "META-INF/services/javax.annotation.processing.Processor");
+                File incrementalDeclaration = new File(file, "/META-INF/services/org.gradle.processing.Processor");
+                if (processorDeclaration.isFile() && !incrementalDeclaration.isFile()) {
+                    return true;
+                }
+            }
+            if (file.getPath().endsWith(".jar")) {
+                ZipFile zipFile = null;
+                try {
+                    zipFile = new ZipFile(file);
+                    ZipEntry processorDeclaration = zipFile.getEntry("META-INF/services/javax.annotation.processing.Processor");
+                    ZipEntry incrementalDeclaration = zipFile.getEntry("META-INF/services/org.gradle.processing.Processor");
+                    if (processorDeclaration != null && incrementalDeclaration == null) {
+                        return true;
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                } finally {
+                    try {
+                        zipFile.close();
+                    } catch (IOException ignored) {
+                        //ignore in favor of previous failure
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

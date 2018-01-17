@@ -26,9 +26,14 @@ import org.gradle.test.fixtures.file.TestFile
 class AnnotationProcessorFixture {
     String message = "greetings"
     private String suffix = ""
+    private boolean incremental = false
 
     void setSuffix(String suffix) {
         this.suffix = suffix ? " " + suffix : ""
+    }
+
+    void setIncremental(boolean incremental) {
+        this.incremental = incremental
     }
 
     def writeApiTo(TestFile projectDir) {
@@ -127,5 +132,8 @@ class AnnotationProcessorFixture {
             }
 """
         projectDir.file('src/main/resources/META-INF/services/javax.annotation.processing.Processor').text = 'Processor'
+        if (incremental) {
+            projectDir.file('src/main/resources/META-INF/services/org.gradle.processing.Processor').text = 'Processor=simple'
+        }
     }
 }
