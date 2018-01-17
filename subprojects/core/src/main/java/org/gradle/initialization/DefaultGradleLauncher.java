@@ -49,8 +49,6 @@ public class DefaultGradleLauncher implements GradleLauncher {
         Load, LoadBuild, Configure, TaskGraph, Build, Finished
     }
 
-    private static final LoadBuildBuildOperationType.Details DETAILS = new LoadBuildBuildOperationType.Details() {
-    };
     private static final LoadBuildBuildOperationType.Result RESULT = new LoadBuildBuildOperationType.Result() {
     };
 
@@ -248,7 +246,12 @@ public class DefaultGradleLauncher implements GradleLauncher {
         @Override
         public BuildOperationDescriptor.Builder description() {
             return BuildOperationDescriptor.displayName(contextualize("Load build"))
-                .details(DETAILS)
+                .details(new LoadBuildBuildOperationType.Details(){
+                    @Override
+                    public String getBuildPath() {
+                        return gradle.getIdentityPath().toString();
+                    }
+                })
                 .parent(getGradle().getBuildOperation());
         }
     }

@@ -40,7 +40,7 @@ class LoadBuildBuildOperationIntegrationTest extends AbstractIntegrationSpec {
         succeeds('foo')
 
         then:
-        operation().details.isEmpty()
+        operation().details.buildPath == ":"
         operation().result.isEmpty()
     }
 
