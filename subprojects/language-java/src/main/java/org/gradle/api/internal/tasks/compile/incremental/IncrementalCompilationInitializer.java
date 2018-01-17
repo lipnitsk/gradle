@@ -17,7 +17,6 @@
 package org.gradle.api.internal.tasks.compile.incremental;
 
 import com.google.common.collect.Lists;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.file.FileOperations;
 import org.gradle.api.internal.file.collections.SimpleFileCollection;
 import org.gradle.api.internal.tasks.compile.JavaCompileSpec;
@@ -44,8 +43,9 @@ class IncrementalCompilationInitializer {
         Factory<PatternSet> patternSetFactory = fileOperations.getFileResolver().getPatternSetFactory();
         PatternSet classesToDelete = patternSetFactory.create();
         PatternSet sourceToCompile = patternSetFactory.create();
+        PatternSet sourceToDelete = patternSetFactory.create();
 
-        preparePatterns(staleClasses, classesToDelete, sourceToCompile);
+        preparePatterns(staleClasses, classesToDelete, sourceToCompile, sourceToDelete);
 
         //selectively configure the source
         spec.setSource(spec.getSource().getAsFileTree().matching(sourceToCompile));
@@ -54,21 +54,29 @@ class IncrementalCompilationInitializer {
         classpath.add(spec.getDestinationDir());
         spec.setCompileClasspath(classpath);
         //get rid of stale files
-        FileTree deleteMe = fileOperations.fileTree(spec.getDestinationDir()).matching(classesToDelete);
-        fileOperations.delete(deleteMe);
+        fileOperations.delete(fileOperations.fileTree(spec.getDestinationDir()).matching(classesToDelete));
+        File generatedSourcesDirectory = spec.getCompileOptions().getAnnotationProcessorGeneratedSourcesDirectory();
+        if (generatedSourcesDirectory == null) {
+            generatedSourcesDirectory = spec.getDestinationDir();
+        }
+        fileOperations.delete(fileOperations.fileTree(generatedSourcesDirectory).matching(sourceToDelete));
     }
 
-    void preparePatterns(Collection<String> staleClasses, PatternSet classesToDelete, PatternSet sourceToCompile) {
+    void preparePatterns(Collection<String> staleClasses, PatternSet classesToDelete, PatternSet sourceToCompile, PatternSet sourceToDelete) {
         assert !staleClasses.isEmpty(); //if stale classes are empty (e.g. nothing to recompile), the patterns will not have any includes and will match all (e.g. recompile everything).
         for (String staleClass : staleClasses) {
             String path = staleClass.replaceAll("\\.", "/");
             classesToDelete.include(path.concat(".class"));
             classesToDelete.include(path.concat("$*.class"));
+            classesToDelete.include(path.concat("*Helper.class"));
+            classesToDelete.include(path.concat("$*Helper.class"));
+
+            sourceToDelete.include(path.concat("*Helper.java"));
+            sourceToDelete.include(path.concat("$*Helper.java"));
 
             //the stale class might be a source class that was deleted
             //it's no harm to include it in sourceToCompile anyway
             sourceToCompile.include(path.concat(".java"));
-            //if inner classes exists as a separate .java file, they need to be recompiled too.
             sourceToCompile.include(path.concat("$*.java"));
         }
     }
