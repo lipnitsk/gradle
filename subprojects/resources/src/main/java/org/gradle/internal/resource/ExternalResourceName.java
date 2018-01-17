@@ -181,26 +181,39 @@ public class ExternalResourceName {
     public ExternalResourceName resolve(String path) {
         List<String> parts = new ArrayList<String>();
         boolean leadingSlash;
+        boolean secondLeadingSlash;
         boolean trailingSlash = path.endsWith("/");
         if (path.startsWith("/")) {
             leadingSlash = true;
+            secondLeadingSlash = path.startsWith("//");
             append(path, parts);
         } else {
             leadingSlash = this.path.startsWith("/");
+            secondLeadingSlash = this.path.startsWith("//");
             append(this.path, parts);
             append(path, parts);
         }
-        String newPath = join(leadingSlash, trailingSlash, parts);
+        String newPath = join(leadingSlash, secondLeadingSlash, trailingSlash, parts);
         return new ExternalResourceName(encodedRoot, newPath);
     }
 
-    private String join(boolean leadingSlash, boolean trailingSlash, List<String> parts) {
+    private String join(boolean leadingSlash, boolean secondLeadingSlash, boolean trailingSlash, List<String> parts) {
         if (parts.isEmpty() && leadingSlash) {
+            if (secondLeadingSlash) {
+                return "//";
+            }
             return "/";
         }
         StringBuilder builder = new StringBuilder();
         for (String part : parts) {
-            if (builder.length() > 0 || leadingSlash) {
+            if (builder.length() == 0) {
+                if (leadingSlash) {
+                    builder.append("/");
+                    if (secondLeadingSlash) {
+                        builder.append("/");
+                    }
+                }
+            } else {
                 builder.append("/");
             }
             builder.append(part);

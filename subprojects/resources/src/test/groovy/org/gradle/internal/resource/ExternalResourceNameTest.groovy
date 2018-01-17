@@ -119,6 +119,7 @@ class ExternalResourceNameTest extends Specification {
         expect:
         def name = new ExternalResourceName(uri)
         name.decoded == expectedDecoded
+        name.resolve("").decoded == expectedDecoded
 
         where:
         uri                              | expectedDecoded
